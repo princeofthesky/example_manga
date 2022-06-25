@@ -1,6 +1,10 @@
 package com.example.test;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
@@ -11,6 +15,7 @@ import java.security.NoSuchProviderException;
 import java.util.Arrays;
 
 import org.apache.http.HttpEntity;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -20,6 +25,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.bouncycastle.jce.interfaces.ECKey;
 import org.bouncycastle.math.ec.custom.sec.SecP256K1Point;
 import org.bouncycastle.util.encoders.HexEncoder;
+import org.web3j.abi.datatypes.Address;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.ECKeyPair;
 import org.web3j.crypto.Keys;
@@ -31,8 +37,6 @@ import org.web3j.rlp.RlpString;
 import com.example.model.NFTOrder;
 import com.example.model.SellOrder;
 
-import com.excample.model.NFTOrder;
-import com.excample.model.SellOrder;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
@@ -120,33 +124,41 @@ public class Wallet {
 
 	}
 
-	public static void uploadNFT() {
+	public static void uploadNFT(String fileName) throws Exception {
 		DefaultHttpClient client = new DefaultHttpClient();// Open a client HTTP request
-		HttpPost post = new HttpPost("");// Create HTTP POST requests
+		HttpPost post = new HttpPost("http://nft.skymeta.pro/manga/upload");// Create HTTP POST requests
 		MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-		builder.setCharset(Charset.forName("uft-8"));// Set the encoding format of the request
+		builder.setCharset(Charset.forName("utf-8"));// Set the encoding format of the request
 		builder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);// Setting Browser Compatibility Mode
 		int count = 0;
-		for (File file : files) {
-			builder.addBinaryBody("file" + count, file);
-			count++;
-		}
-		builder.addTextBody("method", "");// Setting Request Parameters
-		builder.addTextBody("fileTypes", "");// Setting Request Parameters
+		File file = new File(fileName);
+		builder.addBinaryBody("file", file);
+		builder.addTextBody("title", "My Document");// Setting Request Parameters
+		builder.addTextBody("author", "Matt Aimonetti");// Setting Request Parameters
+		builder.addTextBody("description", "A document with all the Go programming language secrets");// Setting Request
+																										// Parameters
+		builder.addTextBody("address", "0xe7FBbf888fAe89390E57d476904Af9587e3dB1B1");// Setting Request Parameters
 		HttpEntity entity = builder.build();// Generating HTTP POST Entities
 		post.setEntity(entity);// Setting Request Parameters
 		CloseableHttpResponse response = client.execute(post);// Initiate the request and return the response
 		// to the request
 		if (response.getStatusLine().getStatusCode() == 200) {
-			System.out.println(response.getEntity().getContent());
+			InputStreamReader isReader = new InputStreamReader(response.getEntity().getContent());
+			// Creating a BufferedReader object
+			BufferedReader reader = new BufferedReader(isReader);
+			StringBuffer sb = new StringBuffer();
+			String str;
+			while ((str = reader.readLine()) != null) {
+				sb.append(str);
+			}
+			System.out.println(sb.toString());
 		}
-		return false;
 	}
 
 	public static void main(String[] args) throws Exception {
 		System.out.println("Hello world");
 
-		signMessage();
+		uploadNFT("/home/tamnb/Pictures/test1.png");
 
 	}
 
