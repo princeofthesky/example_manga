@@ -23,8 +23,8 @@ import org.web3j.crypto.Sign.SignatureData;
 import org.web3j.crypto.WalletFile.Crypto;
 import org.web3j.rlp.RlpString;
 
-import com.excample.model.NFTOrder;
-import com.excample.model.SellOrder;
+import com.example.model.NFTOrder;
+import com.example.model.SellOrder;
 
 import net.arnx.jsonic.JSON;
 

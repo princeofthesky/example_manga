@@ -1,4 +1,4 @@
-package com.excample.model;
+package com.example.model;
 
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.jcajce.provider.digest.SHA256;

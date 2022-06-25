@@ -1,4 +1,4 @@
-package com.excample.model;
+package com.example.model;
 
 public class NFTOrder {
 	public SellOrder NFT;
