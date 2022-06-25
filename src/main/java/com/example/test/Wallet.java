@@ -2,15 +2,20 @@ package com.example.test;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
+import java.net.http.HttpClient;
+import java.net.http.HttpResponse;
+import java.nio.charset.Charset;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.util.Arrays;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.bouncycastle.jce.interfaces.ECKey;
 import org.bouncycastle.math.ec.custom.sec.SecP256K1Point;
@@ -26,6 +31,13 @@ import org.web3j.rlp.RlpString;
 import com.example.model.NFTOrder;
 import com.example.model.SellOrder;
 
+import com.excample.model.NFTOrder;
+import com.excample.model.SellOrder;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.mime.HttpMultipartMode;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.impl.client.DefaultHttpClient;
+
 import net.arnx.jsonic.JSON;
 
 public class Wallet {
@@ -39,16 +51,15 @@ public class Wallet {
 
 	}
 
-	
 	public static byte[] trimLeadingBytes(byte[] bytes, byte b) {
-        int offset = 0;
-        for (; offset < bytes.length - 1; offset++) {
-            if (bytes[offset] != b) {
-                break;
-            }
-        }
-        return Arrays.copyOfRange(bytes, offset, bytes.length);
-    }
+		int offset = 0;
+		for (; offset < bytes.length - 1; offset++) {
+			if (bytes[offset] != b) {
+				break;
+			}
+		}
+		return Arrays.copyOfRange(bytes, offset, bytes.length);
+	}
 
 	public static String ToHexString(byte[] input, int offset, int length, boolean withPrefix) {
 		StringBuilder stringBuilder = new StringBuilder();
@@ -66,9 +77,10 @@ public class Wallet {
 		return ToHexString(input, 0, input.length, false);
 	}
 
-    public static byte[] trimLeadingZeroes(byte[] bytes) {
-        return trimLeadingBytes(bytes, (byte) 0);
-    }
+	public static byte[] trimLeadingZeroes(byte[] bytes) {
+		return trimLeadingBytes(bytes, (byte) 0);
+	}
+
 	public static void signMessage() throws Exception {
 		ECKeyPair keyPaire = Credentials.create("6ebeb334ed66b6fc281ec4056d1291dfeb95ff2f097a7aafa4ed322a43fb973c")
 				.getEcKeyPair();
@@ -79,18 +91,18 @@ public class Wallet {
 		nft.Nonce = 1;
 		nft.Price = "100000000";
 		nft.Type = "USDT";
-		
-		SignatureData signData = Sign.signMessage(nft.hash(), keyPaire,false);
+
+		SignatureData signData = Sign.signMessage(nft.hash(), keyPaire, false);
 
 		NFTOrder order = new NFTOrder();
 		order.NFT = nft;
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		outputStream.write(signData.getR());
 		outputStream.write(signData.getS());
-		outputStream.write(new byte[] {(byte) (signData.getV()[0]-27)});
+		outputStream.write(new byte[] { (byte) (signData.getV()[0] - 27) });
 
-		byte[] sign = outputStream.toByteArray( );
-		
+		byte[] sign = outputStream.toByteArray();
+
 		order.Hash = ToHexString(sign);
 		String body = JSON.encode(order);
 
@@ -103,9 +115,32 @@ public class Wallet {
 		CloseableHttpResponse response = client.execute(httpPost);
 		byte[] res = response.getEntity().getContent().readAllBytes();
 		System.out.println(response.getEntity().getContentEncoding());
-		System.out.println(new String(res) );
+		System.out.println(new String(res));
 		client.close();
 
+	}
+
+	public static void uploadNFT() {
+		DefaultHttpClient client = new DefaultHttpClient();// Open a client HTTP request
+		HttpPost post = new HttpPost("");// Create HTTP POST requests
+		MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+		builder.setCharset(Charset.forName("uft-8"));// Set the encoding format of the request
+		builder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);// Setting Browser Compatibility Mode
+		int count = 0;
+		for (File file : files) {
+			builder.addBinaryBody("file" + count, file);
+			count++;
+		}
+		builder.addTextBody("method", "");// Setting Request Parameters
+		builder.addTextBody("fileTypes", "");// Setting Request Parameters
+		HttpEntity entity = builder.build();// Generating HTTP POST Entities
+		post.setEntity(entity);// Setting Request Parameters
+		CloseableHttpResponse response = client.execute(post);// Initiate the request and return the response
+		// to the request
+		if (response.getStatusLine().getStatusCode() == 200) {
+			System.out.println(response.getEntity().getContent());
+		}
+		return false;
 	}
 
 	public static void main(String[] args) throws Exception {
