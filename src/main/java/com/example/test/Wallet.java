@@ -4,7 +4,9 @@ import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
@@ -13,10 +15,12 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.util.Arrays;
+import java.util.Map;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -46,6 +50,8 @@ import net.arnx.jsonic.JSON;
 
 public class Wallet {
 
+	public static String privateKey = "034190447fecfe7c9a4cc04e865766b13eac198eec296688df9d3ead6394eb5f";
+	public static String pubkey=Keys.getAddress(Credentials.create(privateKey).getEcKeyPair().getPublicKey());  //0x399ebc77E17D99Bc3f7345718e080ffF380c391A
 	public static void NewWallet()
 			throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException {
 		ECKeyPair keyPaire = Keys.createEcKeyPair();
@@ -84,17 +90,27 @@ public class Wallet {
 	public static byte[] trimLeadingZeroes(byte[] bytes) {
 		return trimLeadingBytes(bytes, (byte) 0);
 	}
+	
+	
+	public static int getNonce() throws Exception {
+		DefaultHttpClient client = new DefaultHttpClient();// Open a client HTTP request
+		HttpGet httpGet = new HttpGet("http://nft.skymeta.pro/users/"+pubkey	+ "/nonce");
+		CloseableHttpResponse response = client.execute(httpGet);
+		Map<String,Object> map =JSON.decode(response.getEntity().getContent());
+		int nonce = ((BigDecimal) map.get("data")).intValue();
+		return nonce;
+	}
 
-	public static void signMessage() throws Exception {
-		ECKeyPair keyPaire = Credentials.create("6ebeb334ed66b6fc281ec4056d1291dfeb95ff2f097a7aafa4ed322a43fb973c")
+	public static void sellNFT(Integer tokenId) throws Exception {
+		ECKeyPair keyPaire = Credentials.create(privateKey)
 				.getEcKeyPair();
 		System.out.println(Keys.getAddress(keyPaire.getPublicKey()));
 
 		SellOrder nft = new SellOrder();
-		nft.TokenId = 1;
-		nft.Nonce = 1;
+		nft.TokenId = tokenId;
+		nft.Nonce = getNonce();
 		nft.Price = "100000000";
-		nft.Type = "USDT";
+		nft.Type = "BUSD";
 
 		SignatureData signData = Sign.signMessage(nft.hash(), keyPaire, false);
 
@@ -110,8 +126,9 @@ public class Wallet {
 		order.Hash = ToHexString(sign);
 		String body = JSON.encode(order);
 
+		System.out.println("body \t"+body);
 		CloseableHttpClient client = HttpClients.createDefault();
-		HttpPost httpPost = new HttpPost("http://127.0.0.1:9090/manga/sell");
+		HttpPost httpPost = new HttpPost("http://nft.skymeta.pro/users/sell_nft");
 		StringEntity entity = new StringEntity(body);
 		httpPost.setEntity(entity);
 		httpPost.setHeader("Accept", "application/json");
@@ -137,7 +154,7 @@ public class Wallet {
 		builder.addTextBody("author", "Matt Aimonetti");// Setting Request Parameters
 		builder.addTextBody("description", "A document with all the Go programming language secrets");// Setting Request
 																										// Parameters
-		builder.addTextBody("address", "0xe7FBbf888fAe89390E57d476904Af9587e3dB1B1");// Setting Request Parameters
+		builder.addTextBody("address", pubkey);// Setting Request Parameters
 		HttpEntity entity = builder.build();// Generating HTTP POST Entities
 		post.setEntity(entity);// Setting Request Parameters
 		CloseableHttpResponse response = client.execute(post);// Initiate the request and return the response
@@ -158,7 +175,10 @@ public class Wallet {
 	public static void main(String[] args) throws Exception {
 		System.out.println("Hello world");
 
-		uploadNFT("/home/tamnb/Pictures/test1.png");
+		
+		sellNFT(9);
+		
+//		uploadNFT("/home/tamnb/Pictures/victor-duenas-teixeira-lbEUk6kecE8-unsplash.jpg");
 
 	}
 
